@@ -11,8 +11,24 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-  storage: storage
+  storage: storage,
+  limits:{fileSize: 10000000},
+  fileFilter: function(req, file, cb){
+    checkFileType(file, cb);
+  }
 }).single('myImage');
+
+function checkFileType(file, cb){
+  const filetypes = /jpeg|jpg|png|gif/;
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = filetypes.test(file.mimetype);
+
+  if(mimetype && extname){
+    return cb(null,true);
+  } else {
+    cb('Error: Images Only!');
+  }
+}
 
 const app = express();
 
@@ -29,8 +45,16 @@ app.post('/upload',(req,res) => {
         msg:err
       });
     }else{
-      console.log(req.file);
-      res.send('ok');
+      if(req.file == undefined){
+        res.render('index',{
+          msg:"Error: No file selected!"
+        });
+      }else{
+        res.render('index',{
+          msg:'File uploaded!',
+          file: `uploads/${req.file.filename}`
+        });
+      }
     }
   });
 });
